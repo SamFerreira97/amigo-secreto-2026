@@ -1,59 +1,53 @@
 # Nosso Amigo Secreto 2026
 
-React + TypeScript + Tailwind CSS, com Supabase Auth e PostgreSQL. A versão sem configuração exibe a experiência natalina, mas bloqueia login, sorteio e persistência remota. Nenhum resultado é simulado ou guardado no navegador.
+React, TypeScript, Tailwind CSS e Supabase. Interface publicada em https://amigo-secreto-2026-149q.onrender.com/.
 
-## Ativar o evento real
+## Cadastro individual
 
-1. Crie um projeto em https://supabase.com/dashboard. Execute `supabase/schema.sql` uma única vez no SQL Editor.
-2. Em Authentication, desative novos cadastros públicos. Adicione/invite os cinco usuários pelos e-mails reais e configure SMTP para entrega confiável de links de acesso.
-3. Em Authentication → URL Configuration, defina a URL final em Site URL e na lista de Redirect URLs.
-4. Vincule cada UUID de Authentication ao perfil correto no SQL Editor (não use e-mails inventados):
+Cada pessoa informa seu e-mail, recebe um link, confirma a conta e usa um convite individual para vincular seu perfil. Não há escolha livre de nome e não é necessário cadastrar os cinco e-mails antecipadamente. Uma conta pode ter apenas um perfil; um perfil vinculado não pode ser tomado por outra conta.
 
-```sql
-update public.participants set user_id='UUID-REAL-DE-SAMUEL', is_admin=true where name='Samuel';
-update public.participants set user_id='UUID-REAL-DE-GABI' where name='Gabi';
-update public.participants set user_id='UUID-REAL-DE-GABRIEL' where name='Gabriel';
-update public.participants set user_id='UUID-REAL-DE-MIRELLA' where name='Mirella';
-update public.participants set user_id='UUID-REAL-DE-VANESSA' where name='Vanessa';
+Somente o organizador gera os convites, em **Nosso encontro → engrenagem → Convites individuais**. Compartilhe cada código diretamente com a pessoa indicada. Valem 30 dias, são de uso único e não contêm resultados. Gerar outro invalida o convite anterior ainda não utilizado.
+
+## Ativar o Supabase
+
+1. Crie um projeto gratuito. Execute `supabase/schema.sql` uma única vez no banco novo, seguido de `supabase/002_enrollment.sql`.
+2. Habilite autenticação por e-mail e cadastro de novos usuários, mantendo a confirmação de e-mail. O app solicita `shouldCreateUser: true`; contas sem convite não recebem perfil nem resultados.
+3. Configure Site URL e Redirect URLs para `https://amigo-secreto-2026-149q.onrender.com/`, sem curingas desnecessários.
+4. Configure Custom SMTP: Gmail `smtp.gmail.com`, porta `587` (STARTTLS), usuário e remetente iguais ao seu Gmail, nome `Nosso Amigo Secreto 2026`. O proprietário deve criar uma senha de app elegível na conta Google com verificação em duas etapas e inseri-la diretamente no Supabase. Não use a senha normal da conta. A credencial SMTP nunca deve entrar no código, GitHub ou variáveis VITE.
+5. No template Magic Link, use assunto `Seu acesso ao Amigo Secreto 2026` e botão apontando para `{{ .ConfirmationURL }}`. Não inclua o resultado do sorteio.
+6. No Render, defina `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` com URL e chave pública publishable/anon. Reconstrua e publique. Nunca use service_role no frontend.
+7. Execute `supabase/bootstrap-organizador.sql` no SQL Editor privado. Guarde o convite retornado somente para Samuel. Não execute automaticamente em builds. Reexecutar pode substituir um convite de Samuel ainda não usado; não altera resultados.
+8. Samuel informa seu e-mail no app, abre o link e cola o convite. Depois gera os convites de Gabi, Gabriel, Mirella e Vanessa no painel do evento.
+9. Cada pessoa completa o cadastro. Somente após os cinco vínculos, o organizador confirma o sorteio definitivo.
+
+Custom SMTP é necessário para enviar aos participantes fora da equipe administrativa do Supabase. Não conceda acesso à organização Supabase aos participantes para contornar esse limite.
+
+## Segurança
+
+- Resultados somente no banco. Não há permutação completa no frontend, mensagens ou URLs.
+- `assignments` não concede leitura direta ao cliente. `my_result()` usa apenas `auth.uid()` e retorna um destinatário e seus desejos.
+- RLS limita perfil e desejos ao próprio usuário. O participante não altera identidade nem `is_admin`.
+- Hashes de convites ficam em `private.enrollment_invites`, sem grants ao cliente. Funções restritas validam e-mail confirmado, convite, validade e identidade antes de vincular.
+- O sorteio exige organizador, bloqueio transacional e cinco identidades. Fisher-Yates usa bytes criptográficos com rejeição de viés e de permutações com autoatribuição. Constraints garantem unicidade. Não há função de reset.
+- Cadastro, e-mail, fotos e implantação não executam o sorteio nem alteram relações existentes.
+- Fotos de identificação em `public/participants/` são públicas conforme autorizado e não contêm resultados ou UUIDs.
+- Administradores do banco/Supabase mantêm acesso técnico privilegiado ao banco; esse poder não é concedido aos participantes.
+
+## Desenvolvimento e validação
+
+```sh
+npm ci
+npm test
+npm run build
+npm run dev
 ```
 
-5. Copie `.env.example` para `.env.local` e preencha URL e chave pública anon/publishable. Nunca coloque `service_role` no frontend. As variáveis `VITE_` são públicas e incorporadas durante o build.
-6. Rode `npm install`, `npm run build`. Publique `dist/`. No Sites, será preciso reconstruir e publicar uma versão com a configuração pública incorporada. A publicação inicial do Sites é privada ao proprietário; ajuste o acesso do site para os participantes antes de distribuir o convite.
-7. Entre como Samuel, abra a engrenagem em Nosso encontro, salve data/local/valores e confirme o sorteio definitivo. Não execute antes de revisar os cinco vínculos.
+O teste executa o SQL real em PostgreSQL via PGlite com pgcrypto e um esquema Auth de teste. Cobre e-mail confirmado, convites, validade, substituição, vínculo único, RLS, restrição administrativa, sorteio único e preservação dos resultados. Não testa entrega SMTP real.
 
-## Segurança e persistência
+Antes de liberar: testar entrega ao proprietário, identidade após clicar, sessão após atualizar e isolamento entre duas contas. Não executar um sorteio real apenas para testar e-mail.
 
-- Autenticação por link de e-mail; não existe troca de perfil por nome.
-- Perfis só podem ser lidos pelo próprio usuário, sem permissão de alteração de identidade ou administrador.
-- Tabela de resultados sem privilégios para `anon` ou `authenticated`. A função `my_result()` não recebe IDs: usa exclusivamente `auth.uid()` e retorna apenas o destinatário e seus desejos.
-- Lista de desejos editável e consultável diretamente somente pelo proprietário; quem o tirou recebe os desejos via função restrita.
-- `draw_once()` exige administrador, bloqueia a linha do evento e grava todo o grupo na mesma transação. Fisher-Yates com bytes criptográficos, rejeição de viés e rejeição de permutações com autoatribuição. Chaves únicas garantem destinatários e remetentes exclusivos.
-- A API de configuração não permite escrever o indicador `drawn`. Não há função de reset.
-- Administradores do banco/Supabase continuam tecnicamente capazes de acessar os dados, como em qualquer implantação administrada.
-- Resultados e desejos persistem no Supabase. A sessão utiliza a persistência do SDK; resultados não são salvos em localStorage.
+## Hospedagem
 
-## Validação antes do uso
+Render: branch `main`, build `npm ci && npm run build`, pasta `dist`. `render.yaml` descreve somente Static Site gratuito, sem banco, disco ou execução pagos. O Supabase é separado. Variáveis VITE são incorporadas no build e exigem nova publicação após mudanças.
 
-Em um projeto de teste, autentique duas contas distintas: cada uma deve receber apenas seu próprio perfil/resultado. Leituras diretas de assignments devem falhar; leitura dos desejos alheios deve retornar vazio; chamadas de sorteio por não administrador devem falhar. Duas chamadas simultâneas de sorteio devem gerar um único conjunto de cinco resultados. Uma segunda tentativa deve falhar. Atualize a página e confirme a persistência da lista. Teste o login por e-mail em outro celular.
-
-Esses testes de integração exigem um projeto Supabase ativo e não são substituídos pela compilação TypeScript. Referência: https://supabase.com/docs/guides/database/postgres/row-level-security e https://supabase.com/docs/guides/database/functions.
-
-## Interface
-
-Contagem até 25/12/2026, 00:00 em Brasília; encontro separado e configurável. Música sintetizada opcional, sem reprodução automática. Neve e animações respeitam a preferência de movimento reduzido. O WhatsApp recebe somente o convite e a URL, sem resultados.
-
-## Fotos dos participantes
-
-Fotos de identificação: Gabi (1), Mirella (2), Gabriel (3), Vanessa (4), Samuel (5), conforme enviadas. Arquivos estáticos em `public/participants/` contêm apenas as fotos. O recorte circular é feito por CSS, sem alterar os originais. A associação nome/foto é pública para quem tem acesso ao site e não contém UUIDs ou relações do sorteio. Atualizar esses arquivos não executa SQL, migrações ou funções de sorteio e não altera resultados. Preserve o acesso privado do site ao compartilhar fotos apenas com o grupo.
-
-## GitHub Pages
-
-Versão preparada para publicação em subdiretório no GitHub Pages: assets e fotografias usam caminhos relativos, e o convite e retorno de login usam a URL completa do aplicativo. Publique a pasta `docs/` da branch principal. Recompile com `npm run build` e copie `dist/` para `docs/` a cada alteração. A autenticação e os resultados secretos continuam no Supabase; GitHub Pages hospeda apenas arquivos estáticos. Não publique chaves service_role nem resultados no repositório.
-
-## Render — hospedagem gratuita
-
-O `render.yaml` cria apenas um Static Site gratuito, usando a branch `main`, build `npm ci && npm run build` e diretório público `dist`. Não cria serviço Node pago, disco ou banco. O Render escolhe o endereço `onrender.com` disponível ao criar o site. No painel Render, use New → Blueprint e selecione este repositório, ou New → Static Site com os mesmos comandos. Confirme que a configuração é Static Site.
-
-O tema natural e as cinco fotos são mantidos. A interface funciona no domínio raiz sem mudanças na lógica do sorteio. O site anterior no GitHub Pages deve continuar disponível até o novo endereço ser verificado.
-
-Esta mudança hospeda a interface; não ativa o login ou envio de e-mail. Para ativá-los, configure Supabase, vincule os cinco e-mails e adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` como variáveis de build no Render. Configure a nova URL em Authentication → URL Configuration do Supabase e publique novamente. Use somente a chave pública publishable/anon; nunca service_role. Resultados e desejos permanecem no banco remoto, sem depender de disco temporário do Render. Nenhum sorteio é executado durante o build ou a implantação.
+A cópia no GitHub Pages usa `docs/`; atualize esse diretório com o build correspondente para publicar nessa hospedagem. O endereço principal atual é o Render.
