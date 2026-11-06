@@ -49,3 +49,11 @@ Fotos de identificação: Gabi (1), Mirella (2), Gabriel (3), Vanessa (4), Samue
 ## GitHub Pages
 
 Versão preparada para publicação em subdiretório no GitHub Pages: assets e fotografias usam caminhos relativos, e o convite e retorno de login usam a URL completa do aplicativo. Publique a pasta `docs/` da branch principal. Recompile com `npm run build` e copie `dist/` para `docs/` a cada alteração. A autenticação e os resultados secretos continuam no Supabase; GitHub Pages hospeda apenas arquivos estáticos. Não publique chaves service_role nem resultados no repositório.
+
+## Render — hospedagem gratuita
+
+O `render.yaml` cria apenas um Static Site gratuito, usando a branch `main`, build `npm ci && npm run build` e diretório público `dist`. Não cria serviço Node pago, disco ou banco. O Render escolhe o endereço `onrender.com` disponível ao criar o site. No painel Render, use New → Blueprint e selecione este repositório, ou New → Static Site com os mesmos comandos. Confirme que a configuração é Static Site.
+
+O tema natural e as cinco fotos são mantidos. A interface funciona no domínio raiz sem mudanças na lógica do sorteio. O site anterior no GitHub Pages deve continuar disponível até o novo endereço ser verificado.
+
+Esta mudança hospeda a interface; não ativa o login ou envio de e-mail. Para ativá-los, configure Supabase, vincule os cinco e-mails e adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` como variáveis de build no Render. Configure a nova URL em Authentication → URL Configuration do Supabase e publique novamente. Use somente a chave pública publishable/anon; nunca service_role. Resultados e desejos permanecem no banco remoto, sem depender de disco temporário do Render. Nenhum sorteio é executado durante o build ou a implantação.
