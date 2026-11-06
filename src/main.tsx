@@ -3,6 +3,7 @@ import{createRoot}from'react-dom/client';
 import{createClient,User}from'@supabase/supabase-js';
 import{Gift,Music2,VolumeX,ArrowRight,LockKeyhole,CalendarDays,MapPin,Wallet,Settings,Heart,LogOut,X,Check,Share2,Sparkles,Mail}from'lucide-react';
 import './style.css';
+import './natal-natural.css';
 const env=(import.meta as unknown as {env:Record<string,string>}).env;
 const appUrl=new URL(env.BASE_URL,window.location.href).href;
 const db=env.VITE_SUPABASE_URL&&env.VITE_SUPABASE_ANON_KEY?createClient(env.VITE_SUPABASE_URL,env.VITE_SUPABASE_ANON_KEY):null;
