@@ -1,6 +1,6 @@
 import React from 'react';
 import {createRoot} from 'react-dom/client';
-import App from './code-app';
+import App from './app';
 import './style.css';
 import './natal-natural.css';
 createRoot(document.getElementById('root')!).render(<App/>);
