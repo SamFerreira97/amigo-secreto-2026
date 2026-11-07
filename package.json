@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite --host 0.0.0.0",
-    "test": "node tests/enrollment.test.mjs"
+    "test": "node tests/enrollment.test.mjs && node tests/code-access.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
