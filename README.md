@@ -6,7 +6,7 @@ Aplicativo React + TypeScript + Tailwind, com Supabase PostgreSQL para autentica
 
 1. O organizador entrega um PIN individual em particular a cada pessoa. Os códigos já existentes continuam válidos.
 2. Samuel confirma seu PIN, entra no Painel administrativo e inicializa o sorteio único. A confirmação gera os cinco pares atomicamente no servidor, sem revelar os pares ao administrador.
-3. Cada pessoa escolhe sua foto, confirma o PIN e revela seu presente uma única vez. Os desejos são opcionais.
+3. Cada pessoa escolhe sua foto, confirma o PIN e revela seu presente uma única vez. Os desejos são opcionais. Cada uma das três sugestões tem um campo opcional para o link HTTP(S) do presente. A pessoa autorizada vê o botão Ver presente na loja, que abre em outra aba.
 4. Após revelar, o cartão sai da seleção pública. A área Acessar meu perfil mantém os cinco perfis disponíveis para consulta e edição, inclusive em outro celular, com o mesmo PIN. Retornar ao perfil não repete a revelação nem modifica o sorteio.
 5. Desejos cadastrados depois aparecem automaticamente para a pessoa autorizada a consultá-los; há também atualização manual. Ninguém vê quem o sorteou.
 
@@ -34,7 +34,7 @@ A sincronização pública usa somente diretório, evento e status sem pares: Re
 
 ## Banco e publicação
 
-Num projeto novo execute, nessa ordem: supabase/schema.sql, supabase/002_enrollment.sql, supabase/003_code_access.sql e supabase/004_permanent_profiles.sql. Num projeto existente, execute somente migrações ainda não aplicadas. A migração 004 preserva códigos, sessões válidas, fotos originais, desejos, participação e pares já existentes. Não execute as migrações novamente.
+Num projeto novo execute, nessa ordem: supabase/schema.sql, supabase/002_enrollment.sql, supabase/003_code_access.sql supabase/004_permanent_profiles.sql e supabase/005_gift_links.sql. Num projeto existente, execute somente migrações ainda não aplicadas. A migração 004 preserva códigos, sessões válidas, fotos originais, desejos, participação e pares já existentes. Não execute as migrações novamente.
 
 Num grupo novo execute supabase/gerar-codigos.sql uma única vez, no SQL Editor privado como proprietário. Guarde o retorno fora do repositório e entregue cada PIN em particular. O script não substitui códigos existentes. Nunca publique os códigos em arquivos versionados, variáveis VITE, URLs ou mensagens para o grupo. Os SQLs versionados não contêm PINs reais.
 
@@ -45,3 +45,5 @@ No Render use VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY com a chave pública pu
 npm test executa testes das migrações e regras SQL reais com PostgreSQL/PGlite e pgcrypto: acesso dos cinco perfis, limites de tentativas persistentes, acesso permanente e em múltiplas sessões, migração de dados e sessões, inicialização administrativa, bloqueio de repetição, solicitações concorrentes enfileiradas, unicidade e autoatribuições, privacidade, desejos tardios, fotografias, recuperação auditada e preservação de IDs e pares. npm run build verifica TypeScript e gera a produção.
 
 Para QA de navegador isolada, tests/browser-server.mjs fornece um banco SQL efêmero, somente em 127.0.0.1:54399. O Vite pode apontar temporariamente para essa URL e uma chave local de teste. Esse servidor e seus códigos previsíveis são exclusivamente de teste e nunca são usados pelo site publicado. A concorrência da produção é protegida por bloqueios PostgreSQL; o banco local PGlite serializa suas conexões. Não revele perfis reais apenas para testar uma publicação.
+
+A migração 005 acrescenta links privados por sugestão, sem mudar resultados ou preferências. O servidor valida até três URLs HTTP(S), com limite de 2048 caracteres por endereço; clientes antigos preservam links existentes ao salvar sem o novo campo. Os links seguem as mesmas permissões dos desejos. Os testes gift-links.test.mjs verificam persistência, posição de cada sugestão, compatibilidade, validação e integridade do sorteio.
