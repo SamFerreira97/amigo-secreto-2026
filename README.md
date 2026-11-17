@@ -1,4 +1,18 @@
-# Nosso Amigo Secreto 2026
+# Duas edições — Nosso Amigo Oculto de Natal 2026
+
+A página inicial permite escolher a 1ª Edição (Samuel, Gabi, Gabriel, Mirella e Vanessa) ou a 2ª Edição (Samuel, Gabi, Carol, Nanda, Isa e Douglas). Os atalhos são ?edicao=1 e ?edicao=2. Cada edição tem PINs, sessões, perfis, resultados, desejos, links e configuração do encontro independentes.
+
+A primeira edição mantém todas as tabelas e funções anteriores. A migração 006 cria somente tabelas e funções com prefixo edition2_. Um resumo de integridade de todos os dados antigos é comparado dentro de uma transação REPEATABLE READ; se houver qualquer alteração feita pela migração, ela é cancelada. O teste editions.test.mjs confirma também que revelar, editar desejos, configurar o encontro e recuperar acessos na segunda edição não modificam nenhuma linha da primeira.
+
+Samuel e Gabi recebem novos UUIDs e novos PINs na segunda edição. Somente suas fotografias atuais são copiadas do diretório original, sem reenvio. A fotografia de Carol corresponde ao primeiro anexo, Nanda ao segundo, Isa ao terceiro e Douglas ao quarto. Alterações posteriores em qualquer edição ficam restritas a ela.
+
+Para atualizar uma instalação com as migrações 001 a 005, execute SOMENTE supabase/006_second_edition.sql. Em seguida execute supabase/gerar-codigos-edicao2.sql privadamente como proprietário: a primeira execução gera os seis PINs e prepara um único sorteio para toda a nova turma, sem revelar nenhum par. Guarde o retorno fora do repositório e entregue cada PIN em particular. Novas execuções não substituem PINs nem refazem o sorteio. Não execute novamente as migrações anteriores e não execute os scripts de recuperação durante uma publicação comum.
+
+A segunda edição usa a mesma proteção por PIN aleatório, limite de tentativas, sessões de 90 dias, RLS e RPCs com validação no servidor. As funções de uma edição não aceitam sessões da outra, mesmo para Samuel e Gabi. O navegador mantém apenas um token de sessão por edição, em chaves distintas; resultados ficam somente no estado da página do próprio participante. O convite WhatsApp aponta à edição escolhida sem conter PIN, sessão ou resultado.
+
+O novo sorteio tem seis participantes, destinatários únicos e nenhuma autoatribuição. Usa Fisher-Yates criptográfico com rejeição de permutações inválidas e uma trava na linha exclusiva do evento da 2ª edição. A primeira revelação de cada perfil é persistente; o cartão desaparece da seleção, mas continua acessível por PIN no Meu Perfil. Desejos vazios não impedem a revelação e os desejos novos são atualizados automaticamente apenas para a pessoa autorizada. O painel administrativo só informa status e contagens, nunca os pares.
+
+## Referência da primeira edição
 
 Aplicativo React + TypeScript + Tailwind, com Supabase PostgreSQL para autenticação simplificada, perfis, fotografias, desejos e sorteio. Publicação principal: https://amigo-secreto-2026-149q.onrender.com/
 
